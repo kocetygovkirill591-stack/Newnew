@@ -1,0 +1,52 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android project
+        run: |
+          mkdir -p app/src/main/java/ru/novayazhizn/app
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
+
+          if [ -f MainActivity.java ]; then
+            mv MainActivity.java app/src/main/java/ru/novayazhizn/app/MainActivity.java
+          fi
+
+          if [ -f AndroidManifest.xml ]; then
+            mv AndroidManifest.xml app/src/main/AndroidManifest.xml
+          fi
+
+          if [ -f ic_launcher.xml ]; then
+            mv ic_launcher.xml app/src/main/res/drawable/ic_launcher.xml
+          fi
+
+          if [ -f styles.xml ]; then
+            mv styles.xml app/src/main/res/values/styles.xml
+          fi
+
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovayaZhizn-APK
+          path: app/build/outputs/apk/debug/*.apk
