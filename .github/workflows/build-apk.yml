@@ -21,6 +21,7 @@ jobs:
           java-version: '17'
 
       - name: Prepare Android project
+        shell: bash
         run: |
           mkdir -p app/src/main/java/ru/novayazhizn/app
           mkdir -p app/src/main/res/drawable
@@ -42,8 +43,58 @@ jobs:
             mv styles.xml app/src/main/res/values/styles.xml
           fi
 
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "NovayaZhizn"
+          include(":app")
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.6.1' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'ru.novayazhizn.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'ru.novayazhizn.app'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+
+      - name: Create Gradle wrapper
+        run: |
+          gradle wrapper --gradle-version 8.7 --distribution-type bin
+
       - name: Build APK
-        run: gradle assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
